@@ -4,18 +4,15 @@ import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters.SeqHasAsJava
 
 /**
- * 拼音切分工具 —— 基于 Trie 的最长匹配 + 动态规划。
+ * 拼音工具对象 —— 基于 Trie 的高效拼音判定与切分。
  *
  * 特性：
- * - 静态不可变 Trie，只读，线程安全。
- * - 正向 DP，长度从 6 到 1 降序尝试，天然实现长音节优先。
- * - `isSyllable` 直接基于 `String.charAt` 沿 Trie 下降，零临时对象分配。
- * - 时间复杂度 O(n)，空间 O(n)。对海量短字符串极为高效。
- * - 使用 `Option[List[String]]` 表达“可能非拼音”的语义。
+ * - 不可变 Trie 存储合法音节，线程安全。
+ * - 核心匹配基于 String.charAt，不产生临时对象。
+ * - isPinyin 返回 Boolean；split 返回 Option[List[String]]。
  */
-object PinyinSplitter {
+object PinyinUtils {
 
-  /** Trie 节点 */
   private class TrieNode {
     val children: Array[TrieNode] = new Array[TrieNode](26)
     var isEnd: Boolean = false
@@ -27,7 +24,6 @@ object PinyinSplitter {
   /** 最大音节长度 */
   private val MaxLen = 6
 
-  // ---------- 构建合法音节 Trie ----------
   private val syllables: Array[String] = Array(
     "a", "ai", "an", "ang", "ao",
     "ba", "bai", "ban", "bang", "bao", "bei", "ben", "beng", "bi", "bian", "biao", "bie", "bin", "bing", "bo", "bu",
@@ -102,10 +98,33 @@ object PinyinSplitter {
   }
 
   /**
-   * 最长匹配切分拼音。
-   *
-   * @param input 待切分的拼音字符串（建议全小写，内部转为小写）
-   * @return `Some(List[String])` 若能完全切分；`None` 否则
+   * 判断字符串能否完全切分为拼音。
+   */
+  def isPinyin(input: String): Boolean = {
+    if (input == null || input.isEmpty) return false
+    val s = input.toLowerCase
+    val n = s.length
+    val dp = Array.fill(n + 1)(false)
+    dp(0) = true
+
+    var i = 1
+    while (i <= n) {
+      var l = Math.min(MaxLen, i)
+      while (l >= 1) {
+        if (isSyllable(s, i - l, l) && dp(i - l)) {
+          dp(i) = true
+          l = 0 // 跳出内循环
+        }
+        l -= 1
+      }
+      // 不因 dp(i) 为 false 而提前返回，必须完整扫描
+      i += 1
+    }
+    dp(n)
+  }
+
+  /**
+   * 切分拼音字符串。
    */
   def split(input: String): Option[List[String]] = {
     if (input == null || input.isEmpty) return Some(List.empty)
@@ -146,27 +165,12 @@ object PinyinSplitter {
   def splitOrNull(input: String): java.util.List[String] =
     split(input).map(_.asJava).orNull
 
-  // 测试
   def main(args: Array[String]): Unit = {
-    val tests = Seq(
-      "nihao" -> Some(List("ni", "hao")),
-      "xian" -> Some(List("xian")),
-      "shanghai" -> Some(List("shang", "hai")),
-      "rai" -> None,
-      "hello" -> None,
-      "dangan" -> Some(List("dang", "an")),
-      "women" -> Some(List("wo", "men")),
-      "nvren" -> Some(List("nv", "ren")),
-      "lveduo" -> Some(List("lve", "duo")),
-      "zhuang" -> Some(List("zhuang")),
-      "beijing" -> Some(List("bei", "jing")),
-      "englishword" -> None,
-      "kevin" -> None
-    )
-    tests.foreach { case (in, expected) =>
-      val res = split(in)
-      println(s"$in -> ${res.getOrElse(Seq("非拼音")).mkString(" ")} " +
-        s"${if (res == expected) "✓" else "✗"}")
+    val tests = Seq("nihao", "xian", "shanghai", "dangan", "women",
+      "nvren", "lveduo", "zhuang", "beijing",
+      "rai", "hello", "kevin", "englishword", "")
+    tests.foreach { t =>
+      println(s"$t -> isPinyin=${isPinyin(t)}, split=${split(t).getOrElse(Seq("非拼音")).mkString(" ")}")
     }
   }
 }

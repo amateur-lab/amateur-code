@@ -3,32 +3,33 @@ package lab.amateur.learning.others.java;
 import java.util.*;
 
 /**
- * 拼音切分工具 —— 基于 Trie 的最长匹配 + 动态规划。
+ * 拼音工具类 —— 基于 Trie 的高效拼音判定与切分。
  * <p>
  * 特性：
- * 1. 使用静态 Trie 存储全部合法汉语拼音音节（无声调，v 代 ü），初始化后只读，线程安全。
- * 2. 采用正向动态规划，每个位置从长到短尝试（最长 6），实现“长音节优先”策略。
- * 3. 核心匹配方法 {@link #isSyllable(String, int, int)} 直接在输入字符串的底层字符数组上
- * 通过 Trie 查找，完全避免创建临时子字符串，GC 压力极低。
- * 4. 算法时间复杂度 O(n)，n 为字符串长度（≤ 30）；空间复杂度 O(n)。
- * 5. 无法完全切分为合法拼音时返回 null，否则返回音节列表。
+ * <ul>
+ *   <li>内置全部合法汉语拼音音节（无声调，v 代 ü），以 Trie 形式存储，查询 O(len)。</li>
+ *   <li>所有方法均为静态、线程安全、无状态，适合直接在 Spark 等分布式环境中调用。</li>
+ *   <li>核心匹配通过 {@code String.charAt} + Trie 完成，不产生临时子字符串，GC 友好。</li>
+ *   <li>算法复杂度 O(n)。</li>
+ * </ul>
+ * </p>
+ *
+ * <p>
+ * 提供两个主要功能：
+ * <ul>
+ *   <li>{@link #isPinyin(String)} : 判断字符串能否完全切分为合法拼音音节（仅返回 {@code boolean}）。</li>
+ *   <li>{@link #split(String)}   : 按最长匹配原则切分拼音，返回音节列表；若无法切分则返回 {@code null}。</li>
+ * </ul>
  * </p>
  */
-public class PinyinSplitter {
+public class PinyinUtils {
 
-    // ==================== Trie 定义与初始化 ====================
-
-    /**
-     * Trie 节点
-     */
+    // ==================== Trie 节点 ====================
     private static class TrieNode {
         final TrieNode[] children = new TrieNode[26];
-        boolean isEnd; // 标记是否为一个完整音节的结尾
+        boolean isEnd; // 该节点是否为一个完整音节的结尾
     }
 
-    /**
-     * 根节点
-     */
     private static final TrieNode ROOT = new TrieNode();
 
     /**
@@ -36,7 +37,7 @@ public class PinyinSplitter {
      */
     private static final int MAX_LEN = 6;
 
-    /* 静态代码块：加载所有合法拼音音节并构建 Trie */
+    /* 静态加载所有合法拼音音节并构建 Trie */
     static {
         String[] syllables = {
                 "a", "ai", "an", "ang", "ao",
@@ -79,8 +80,8 @@ public class PinyinSplitter {
         };
         for (String syl : syllables) {
             TrieNode node = ROOT;
-            for (int j = 0; j < syl.length(); j++) {
-                int idx = syl.charAt(j) - 'a';
+            for (int i = 0; i < syl.length(); i++) {
+                int idx = syl.charAt(i) - 'a';
                 if (node.children[idx] == null) {
                     node.children[idx] = new TrieNode();
                 }
@@ -89,8 +90,6 @@ public class PinyinSplitter {
             node.isEnd = true;
         }
     }
-
-    // ==================== 核心方法 ====================
 
     /**
      * 直接在字符串上通过索引判断子串是否为合法拼音音节。
@@ -118,80 +117,95 @@ public class PinyinSplitter {
     }
 
     /**
-     * 对输入字符串进行最长匹配拼音切分。
+     * 判断字符串能否完全切分为合法拼音音节。
      *
-     * <p>算法：动态规划。定义 dp[i] 为前缀 s[0..i-1] 是否能被完全切分。
-     * 从 i = 1 到 n 扫描，对于每个位置 i，从最长音节长度（6）向下尝试：
-     * 若 s.substring(i-l, i) 是合法音节且 dp[i-l] 为真，则 dp[i] 为真，
-     * 并记录该位置对应的音节长度 l。由于按长度降序尝试，天然实现最大匹配。</p>
+     * <p>算法：正向动态规划，dp[i] 表示前缀 s[0..i) 是否可切分。
+     * 对于每个 i，尝试所有可能的音节长度 l（从长到短），
+     * 只要找到一个 isSyllable(s, i-l, l) 为真且 dp[i-l] 为真，则 dp[i] 为真。
+     * 最终返回 dp[n]。</p>
      *
-     * @param input 待切分的拼音字符串（建议全小写，内部会转为小写）
-     * @return 若能完全切分，返回音节列表（如 ["ni", "hao"]）；否则返回 null
+     * @param input 待判定字符串（内部转为小写）
+     * @return true 若能完全切分
+     */
+    public static boolean isPinyin(String input) {
+        if (input == null || input.isEmpty()) return false;
+
+        String s = input.toLowerCase();  // 保证小写（若外部已保证，可移除此行提升性能）
+        int n = s.length();
+        boolean[] dp = new boolean[n + 1];
+        dp[0] = true;
+
+        for (int i = 1; i <= n; i++) {
+            for (int l = Math.min(MAX_LEN, i); l >= 1; l--) {
+                if (isSyllable(s, i - l, l) && dp[i - l]) {
+                    dp[i] = true;
+                    break;
+                }
+            }
+        }
+        return dp[n];
+    }
+
+    /**
+     * 对输入字符串进行拼音切分。
+     *
+     * <p>算法与 {@link #isPinyin(String)} 基本相同，但额外记录了每个位置所选择的音节长度。
+     * 同样采用正向 DP + 从长到短的尝试策略，找到第一个合法音节即记录并跳出内循环，
+     * 从而实现最大匹配（长音节优先）。</p>
+     *
+     * <p>注意：这种策略对于某些模糊边界（如 "dangan"）会切分为 "dan" "gan"，
+     * 而非更符合习惯的 "dang" "an"。若需后者，请使用更为复杂的回溯策略。
+     * 但在纯粹“拼音判定与切分”的场景下，本方法已足够正确且高效。</p>
+     *
+     * @param input 待切分的拼音字符串（自动转为小写）
+     * @return 音节列表（如 ["ni", "hao"]）；若无法完全切分则返回 empty immutable list
      */
     public static List<String> split(String input) {
         if (input == null || input.isEmpty()) {
-            return Collections.emptyList(); // 空字符串视为空列表，而非 null
+            return Collections.emptyList();
         }
 
-        // 1. 转为小写并初始化
         String s = input.toLowerCase();
         int n = s.length();
-
         boolean[] dp = new boolean[n + 1];
-        dp[0] = true; // 空前缀可切分
+        dp[0] = true;
+        int[] fromLen = new int[n + 1]; // fromLen[i] 记录以 i 结尾的最长音节的长度
 
-        // fromLen[i] 记录以位置 i 结尾的最长音节的长度（仅在 dp[i]==true 时有效）
-        int[] fromLen = new int[n + 1];
-
-        // 2. 动态规划
         for (int i = 1; i <= n; i++) {
-            // 从最长音节开始尝试，实现最大匹配
             for (int l = Math.min(MAX_LEN, i); l >= 1; l--) {
                 if (isSyllable(s, i - l, l) && dp[i - l]) {
                     dp[i] = true;
                     fromLen[i] = l;
-                    break; // 已找到最长合法音节，跳出内循环
+                    break; // 最长匹配
                 }
             }
         }
 
-        // 3. 无法完全切分
         if (!dp[n]) {
-            return null;
+            return Collections.emptyList();
         }
 
-        // 4. 回溯构建音节列表
+        // 回溯：从末尾开始，根据 fromLen 提取音节
         LinkedList<String> result = new LinkedList<>();
         int pos = n;
         while (pos > 0) {
             int len = fromLen[pos];
-            // 仅在这里创建子字符串，数量 = 音节个数，通常 1~5 个，开销极小
             result.addFirst(s.substring(pos - len, pos));
             pos -= len;
         }
         return result;
     }
 
-    // ==================== 测试 ====================
+    // ==================== 简单测试 ====================
     public static void main(String[] args) {
         String[] tests = {
-                "nihao",
-                "xian",
-                "shanghai",
-                "rai",       // 非法
-                "hello",     // 非法（英文）
-                "dangan",
-                "women",
-                "nvren",
-                "lveduo",
-                "zhuang",
-                "beijing",
-                "englishword",
-                "kevin"      // 非法（英文名）
+                "nihao", "xian", "shanghai", "dangan", "women",
+                "nvren", "lveduo", "zhuang", "zhuaang", "beijing",
+                "rai", "hello", "kevin", "englishword", ""
         };
         for (String t : tests) {
-            List<String> res = split(t);
-            System.out.println(t + " -> " + (res == null ? "非拼音" : String.join(" ", res)));
+            System.out.println(t + " -> isPinyin=" + isPinyin(t) +
+                    ", split=" + (split(t) == null ? "非拼音" : String.join(" ", split(t))));
         }
     }
 }

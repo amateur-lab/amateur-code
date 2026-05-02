@@ -69,98 +69,101 @@ public class PinyinSplitter {
         // 先处理特殊情况：零声母时，韵母书写变化
         if (ini.isEmpty()) {
             // 零声母拼写规则
-            if (fin.equals("i")) {
-                PINYIN_SET.add("yi");
-                return;
-            }
-            if (fin.equals("ia")) {
-                PINYIN_SET.add("ya");
-                return;
-            }
-            if (fin.equals("ie")) {
-                PINYIN_SET.add("ye");
-                return;
-            }
-            if (fin.equals("iao")) {
-                PINYIN_SET.add("yao");
-                return;
-            }
-            if (fin.equals("iu")) {
-                PINYIN_SET.add("you");
-                return;
-            }
-            if (fin.equals("ian")) {
-                PINYIN_SET.add("yan");
-                return;
-            }
-            if (fin.equals("in")) {
-                PINYIN_SET.add("yin");
-                return;
-            }
-            if (fin.equals("iang")) {
-                PINYIN_SET.add("yang");
-                return;
-            }
-            if (fin.equals("ing")) {
-                PINYIN_SET.add("ying");
-                return;
-            }
-            if (fin.equals("iong")) {
-                PINYIN_SET.add("yong");
-                return;
-            }
-            if (fin.equals("u")) {
-                PINYIN_SET.add("wu");
-                return;
-            }
-            if (fin.equals("ua")) {
-                PINYIN_SET.add("wa");
-                return;
-            }
-            if (fin.equals("uo")) {
-                PINYIN_SET.add("wo");
-                return;
-            }
-            if (fin.equals("uai")) {
-                PINYIN_SET.add("wai");
-                return;
-            }
-            if (fin.equals("ui")) {
-                PINYIN_SET.add("wei");
-                return;
-            }
-            if (fin.equals("uan")) {
-                PINYIN_SET.add("wan");
-                return;
-            }
-            if (fin.equals("un")) {
-                PINYIN_SET.add("wen");
-                return;
-            }
-            if (fin.equals("uang")) {
-                PINYIN_SET.add("wang");
-                return;
-            }
-            if (fin.equals("ueng")) {
-                PINYIN_SET.add("weng");
-                return;
-            }
-            // ü 系列
-            if (fin.equals("v")) {
-                PINYIN_SET.add("yu");
-                return;
-            }
-            if (fin.equals("ve")) {
-                PINYIN_SET.add("yue");
-                return;
-            }
-            if (fin.equals("van")) {
-                PINYIN_SET.add("yuan");
-                return;
-            }
-            if (fin.equals("vn")) {
-                PINYIN_SET.add("yun");
-                return;
+            switch (fin) {
+                case "i" -> {
+                    PINYIN_SET.add("yi");
+                    return;
+                }
+                case "ia" -> {
+                    PINYIN_SET.add("ya");
+                    return;
+                }
+                case "ie" -> {
+                    PINYIN_SET.add("ye");
+                    return;
+                }
+                case "iao" -> {
+                    PINYIN_SET.add("yao");
+                    return;
+                }
+                case "iu" -> {
+                    PINYIN_SET.add("you");
+                    return;
+                }
+                case "ian" -> {
+                    PINYIN_SET.add("yan");
+                    return;
+                }
+                case "in" -> {
+                    PINYIN_SET.add("yin");
+                    return;
+                }
+                case "iang" -> {
+                    PINYIN_SET.add("yang");
+                    return;
+                }
+                case "ing" -> {
+                    PINYIN_SET.add("ying");
+                    return;
+                }
+                case "iong" -> {
+                    PINYIN_SET.add("yong");
+                    return;
+                }
+                case "u" -> {
+                    PINYIN_SET.add("wu");
+                    return;
+                }
+                case "ua" -> {
+                    PINYIN_SET.add("wa");
+                    return;
+                }
+                case "uo" -> {
+                    PINYIN_SET.add("wo");
+                    return;
+                }
+                case "uai" -> {
+                    PINYIN_SET.add("wai");
+                    return;
+                }
+                case "ui" -> {
+                    PINYIN_SET.add("wei");
+                    return;
+                }
+                case "uan" -> {
+                    PINYIN_SET.add("wan");
+                    return;
+                }
+                case "un" -> {
+                    PINYIN_SET.add("wen");
+                    return;
+                }
+                case "uang" -> {
+                    PINYIN_SET.add("wang");
+                    return;
+                }
+                case "ueng" -> {
+                    PINYIN_SET.add("weng");
+                    return;
+                }
+
+                // ü 系列
+                case "v" -> {
+                    PINYIN_SET.add("yu");
+                    return;
+                }
+                case "ve" -> {
+                    PINYIN_SET.add("yue");
+                    return;
+                }
+                case "van" -> {
+                    PINYIN_SET.add("yuan");
+                    return;
+                }
+                case "vn" -> {
+                    PINYIN_SET.add("yun");
+                    return;
+                }
             }
             // 其余：a,o,e,ai,ei,ao,ou,an,en,ang,eng,er 等直接使用韵母本身
             PINYIN_SET.add(fin);
@@ -176,39 +179,43 @@ public class PinyinSplitter {
         }
         // ü 系列：j,q,x 后写为 u
         if ("jqx".contains(ini)) {
-            if (fin.equals("v")) {
-                PINYIN_SET.add(ini + "u");
-                return;
-            }
-            if (fin.equals("ve")) {
-                PINYIN_SET.add(ini + "ue");
-                return;
-            }
-            if (fin.equals("van")) {
-                PINYIN_SET.add(ini + "uan");
-                return;
-            }
-            if (fin.equals("vn")) {
-                PINYIN_SET.add(ini + "un");
-                return;
+            switch (fin) {
+                case "v" -> {
+                    PINYIN_SET.add(ini + "u");
+                    return;
+                }
+                case "ve" -> {
+                    PINYIN_SET.add(ini + "ue");
+                    return;
+                }
+                case "van" -> {
+                    PINYIN_SET.add(ini + "uan");
+                    return;
+                }
+                case "vn" -> {
+                    PINYIN_SET.add(ini + "un");
+                    return;
+                }
             }
         } else {
             // 非 jqx，ü 保留 v
-            if (fin.equals("v")) {
-                PINYIN_SET.add(ini + "v");
-                return;
-            }
-            if (fin.equals("ve")) {
-                PINYIN_SET.add(ini + "ve");
-                return;
-            }
-            if (fin.equals("van")) {
-                PINYIN_SET.add(ini + "van");
-                return;
-            }
-            if (fin.equals("vn")) {
-                PINYIN_SET.add(ini + "vn");
-                return;
+            switch (fin) {
+                case "v" -> {
+                    PINYIN_SET.add(ini + "v");
+                    return;
+                }
+                case "ve" -> {
+                    PINYIN_SET.add(ini + "ve");
+                    return;
+                }
+                case "van" -> {
+                    PINYIN_SET.add(ini + "van");
+                    return;
+                }
+                case "vn" -> {
+                    PINYIN_SET.add(ini + "vn");
+                    return;
+                }
             }
         }
         // 常规拼写

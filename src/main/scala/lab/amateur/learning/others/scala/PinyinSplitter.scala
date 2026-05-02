@@ -1,6 +1,5 @@
 package lab.amateur.learning.others.scala
 
-import scala.collection.mutable
 import scala.jdk.CollectionConverters.SeqHasAsJava
 
 object PinyinSplitter {
@@ -8,120 +7,70 @@ object PinyinSplitter {
   /** 最大音节长度 */
   private val MaxLength = 6
 
-  /** 合法拼音音节集合（不可变，线程安全） */
-  private val pinyinSet: Set[String] = {
-    val set = mutable.HashSet.empty[String]
-    initPinyinSet(set)
-    set.toSet // 转为不可变，后续只读
-  }
+  /** 合法拼音音节集合（含 v 代替 ü 的写法） */
+  private val pinyinSet: Set[String] = buildSet
 
   /**
-   * 初始化合法拼音音节集合
+   * 构建合法音节集合。该列表覆盖了全部现代汉语拼音音节（约 410+），
+   * 并按照《汉语拼音方案》的拼写规则，用 v 表示 ü（如 nv、lve）。
    */
-  private def initPinyinSet(set: mutable.HashSet[String]): Unit = {
-    val initials = Seq(
-      "", "b", "p", "m", "f", "d", "t", "n", "l",
-      "g", "k", "h", "j", "q", "x",
-      "zh", "ch", "sh", "r", "z", "c", "s"
-    )
-    val finalsBasic = Seq(
-      "a", "o", "e", "i", "u", "v",
-      "ai", "ei", "ui", "ao", "ou", "iu",
-      "ie", "ve", "er",
-      "an", "en", "in", "un", "vn",
-      "ang", "eng", "ing", "ong"
-    )
-    val finalsCombined = Seq(
-      "ia", "iao", "ian", "iang", "iong",
-      "ua", "uo", "uai", "uan", "uang", "ueng",
-      "van"
-    )
+  private def buildSet: Set[String] = {
 
-    for (ini <- initials; fin <- finalsBasic) addValidCombo(set, ini, fin)
-    for (ini <- initials; fin <- finalsCombined) addValidCombo(set, ini, fin)
-    addSpecificPinyin(set)
+    // 所有合法音节，按字母序排列，以逗号分隔方便审阅/修改
+    val syllables = Seq(
+      "a", "ai", "an", "ang", "ao",
+      "ba", "bai", "ban", "bang", "bao", "bei", "ben", "beng", "bi", "bian", "biao", "bie", "bin", "bing", "bo", "bu",
+      "ca", "cai", "can", "cang", "cao", "ce", "cen", "ceng", "cha", "chai", "chan", "chang", "chao", "che", "chen", "cheng",
+      "chi", "chong", "chou", "chu", "chua", "chuai", "chuan", "chuang", "chui", "chun", "chuo", "ci", "cong", "cou", "cu",
+      "cuan", "cui", "cun", "cuo",
+      "da", "dai", "dan", "dang", "dao", "de", "dei", "den", "deng", "di", "dia", "dian", "diao", "die", "ding", "diu", "dong",
+      "dou", "du", "duan", "dui", "dun", "duo",
+      "e", "ei", "en", "eng", "er",
+      "fa", "fan", "fang", "fei", "fen", "feng", "fo", "fou", "fu",
+      "ga", "gai", "gan", "gang", "gao", "ge", "gei", "gen", "geng", "gong", "gou", "gu", "gua", "guai", "guan", "guang",
+      "gui", "gun", "guo",
+      "ha", "hai", "han", "hang", "hao", "he", "hei", "hen", "heng", "hong", "hou", "hu", "hua", "huai", "huan", "huang",
+      "hui", "hun", "huo",
+      "ji", "jia", "jian", "jiang", "jiao", "jie", "jin", "jing", "jiong", "jiu", "ju", "juan", "jue", "jun",
+      "ka", "kai", "kan", "kang", "kao", "ke", "ken", "keng", "kong", "kou", "ku", "kua", "kuai", "kuan", "kuang",
+      "kui", "kun", "kuo",
+      "la", "lai", "lan", "lang", "lao", "le", "lei", "leng", "li", "lia", "lian", "liang", "liao", "lie", "lin", "ling",
+      "liu", "long", "lou", "lu", "lv", "luan", "lve", "lun", "luo",
+      "ma", "mai", "man", "mang", "mao", "me", "mei", "men", "meng", "mi", "mian", "miao", "mie", "min", "ming", "miu",
+      "mo", "mou", "mu",
+      "na", "nai", "nan", "nang", "nao", "ne", "nei", "nen", "neng", "ni", "nian", "niang", "niao", "nie", "nin", "ning",
+      "niu", "nong", "nou", "nu", "nv", "nuan", "nve", "nuo",
+      "o", "ou",
+      "pa", "pai", "pan", "pang", "pao", "pei", "pen", "peng", "pi", "pian", "piao", "pie", "pin", "ping", "po", "pou", "pu",
+      "qi", "qia", "qian", "qiang", "qiao", "qie", "qin", "qing", "qiong", "qiu", "qu", "quan", "que", "qun",
+      "ran", "rang", "rao", "re", "ren", "reng", "ri", "rong", "rou", "ru", "rua", "ruan", "rui", "run", "ruo",
+      "sa", "sai", "san", "sang", "sao", "se", "sen", "seng", "sha", "shai", "shan", "shang", "shao", "she", "shei", "shen",
+      "sheng", "shi", "shou", "shu", "shua", "shuai", "shuan", "shuang", "shui", "shun", "shuo", "si", "song", "sou",
+      "su", "suan", "sui", "sun", "suo",
+      "ta", "tai", "tan", "tang", "tao", "te", "teng", "ti", "tian", "tiao", "tie", "ting", "tong", "tou", "tu", "tuan",
+      "tui", "tun", "tuo",
+      "wa", "wai", "wan", "wang", "wei", "wen", "weng", "wo", "wu",
+      "xi", "xia", "xian", "xiang", "xiao", "xie", "xin", "xing", "xiong", "xiu", "xu", "xuan", "xue", "xun",
+      "ya", "yan", "yang", "yao", "ye", "yi", "yin", "ying", "yong", "you", "yu", "yuan", "yue", "yun",
+      "za", "zai", "zan", "zang", "zao", "ze", "zei", "zen", "zeng", "zha", "zhai", "zhan", "zhang", "zhao", "zhe", "zhei",
+      "zhen", "zheng", "zhi", "zhong", "zhou", "zhu", "zhua", "zhuai", "zhuan", "zhuang", "zhui", "zhun", "zhuo",
+      "zi", "zong", "zou", "zu", "zuan", "zui", "zun", "zuo"
+    )
+    syllables.toSet
   }
 
   /**
-   * 按拼音规则添加一个声韵组合
-   */
-  private def addValidCombo(set: mutable.HashSet[String], ini: String, fin: String): Unit = {
-    if (ini.isEmpty) {
-      // 零声母拼写规则
-      fin match {
-        case "i" => set += "yi"
-        case "ia" => set += "ya"
-        case "ie" => set += "ye"
-        case "iao" => set += "yao"
-        case "iu" => set += "you"
-        case "ian" => set += "yan"
-        case "in" => set += "yin"
-        case "iang" => set += "yang"
-        case "ing" => set += "ying"
-        case "iong" => set += "yong"
-        case "u" => set += "wu"
-        case "ua" => set += "wa"
-        case "uo" => set += "wo"
-        case "uai" => set += "wai"
-        case "ui" => set += "wei"
-        case "uan" => set += "wan"
-        case "un" => set += "wen"
-        case "uang" => set += "wang"
-        case "ueng" => set += "weng"
-        case "v" => set += "yu"
-        case "ve" => set += "yue"
-        case "van" => set += "yuan"
-        case "vn" => set += "yun"
-        case _ => set += fin // a,o,e,ai,ei,ao,ou,an,en,ang,eng,er...
-      }
-      return
-    }
-
-    // 非零声母
-    // bpmf + uo → bo, po, mo, fo
-    if (fin == "uo" && "bpmf".contains(ini)) {
-      set += ini + "o"
-      return
-    }
-    // jqx 后 ü 写成 u
-    if ("jqx".contains(ini)) {
-      fin match {
-        case "v" => set += ini + "u"
-        case "ve" => set += ini + "ue"
-        case "van" => set += ini + "uan"
-        case "vn" => set += ini + "un"
-        case _ => set += ini + fin
-      }
-    } else {
-      // 其他声母保留 v
-      if (fin == "v" || fin == "ve" || fin == "van" || fin == "vn") {
-        set += ini + fin
-      } else {
-        set += ini + fin
-      }
-    }
-  }
-
-  /**
-   * 补充特殊音节
-   */
-  private def addSpecificPinyin(set: mutable.HashSet[String]): Unit = {
-    set ++= Seq("zhi", "chi", "shi", "ri", "zi", "ci", "si", "er")
-  }
-
-  /**
-   * 尝试将输入字符串按拼音切分。
-   *
-   * @param input 待切分的全小写字母字符串
-   * @return 若可完全切分，返回 Some(拼音音节列表)；否则返回 None
+   * 按最长匹配原则切分拼音。
+   * @param input 全小写字母字符串
+   * @return 若能完全切分，返回 Some(拼音音节列表)；否则返回 None
    */
   def split(input: String): Option[List[String]] = {
     if (input == null || input.isEmpty) return Some(List.empty)
 
-    val s = input.toLowerCase
+    val s = input.toLowerCase // 确保小写
     val n = s.length
     val dp = Array.fill(n + 1)(false)
-    val from = new Array[String](n + 1) // 回溯用音节
+    val from = new Array[String](n + 1) // from(i) 保存以位置 i 结尾的最长合法音节
     dp(0) = true
 
     var i = 1
@@ -140,7 +89,7 @@ object PinyinSplitter {
 
     if (!dp(n)) None
     else {
-      // 回溯，得到反序列表
+      // 回溯结果
       val buf = List.newBuilder[String]
       var pos = n
       while (pos > 0) {
@@ -174,7 +123,8 @@ object PinyinSplitter {
       "yuanwang",
       "gongzuo",
       "xianzai",
-      "englishword"
+      "englishword",
+      "rai"
     )
     tests.foreach { t =>
       println(s"$t -> ${split(t).getOrElse(Seq("非拼音")).mkString(" ")}")

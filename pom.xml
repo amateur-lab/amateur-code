@@ -5,7 +5,7 @@
 
     <groupId>lab.amateur</groupId>
     <artifactId>amateur-code</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
 
     <name>amateur-code</name>
     <url>http://www.example.com</url>
@@ -15,6 +15,7 @@
         <target.java.version>21</target.java.version>
         <scala.version>2.13.18</scala.version>
         <scala.compat.version>2.13</scala.compat.version>
+        <scalatest.version>3.2.20</scalatest.version>
         <maven.compiler.release>${target.java.version}</maven.compiler.release>
         <maven.compiler.source>${target.java.version}</maven.compiler.source>
         <maven.compiler.target>${target.java.version}</maven.compiler.target>
@@ -52,6 +53,17 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.scalactic</groupId>
+            <artifactId>scalactic_${scala.compat.version}</artifactId>
+            <version>${scalatest.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.scalatest</groupId>
+            <artifactId>scalatest_${scala.compat.version}</artifactId>
+            <version>${scalatest.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -121,6 +133,13 @@
                 <version>4.9.10</version>
                 <configuration>
                     <scalaVersion>${scala.version}</scalaVersion>
+                    <compilerPlugins>
+                        <compilerPlugin>
+                            <groupId>com.artima.supersafe</groupId>
+                            <artifactId>supersafe_${scala.version}</artifactId>
+                            <version>1.1.12</version>
+                        </compilerPlugin>
+                    </compilerPlugins>
                 </configuration>
                 <executions>
                     <execution>
@@ -158,4 +177,11 @@
             </plugin>
         </plugins>
     </build>
+    <repositories>
+        <repository>
+            <id>artima</id>
+            <name>Artima Maven Repository</name>
+            <url>https://repo.artima.com/releases</url>
+        </repository>
+    </repositories>
 </project>

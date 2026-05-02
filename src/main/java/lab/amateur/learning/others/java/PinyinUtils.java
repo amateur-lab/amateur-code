@@ -205,7 +205,7 @@ public class PinyinUtils {
         };
         for (String t : tests) {
             System.out.println(t + " -> isPinyin=" + isPinyin(t) +
-                    ", split=" + (split(t) == null ? "非拼音" : String.join(" ", split(t))));
+                    ", split=" + (split(t).isEmpty() ? "非拼音" : String.join(" ", split(t))));
         }
     }
 }

@@ -124,10 +124,13 @@ object PinyinUtils {
   }
 
   /**
-   * 切分拼音字符串。
+   * 对输入字符串进行拼音切分。
+   *
+   * @param input 待切分的拼音字符串（自动转为小写）
+   * @return 音节列表（如 ["ni", "hao"]）；若无法完全切分则返回 null
    */
   def split(input: String): Option[List[String]] = {
-    if (input == null || input.isEmpty) return Some(List.empty)
+    if (input == null || input.isEmpty) return None
 
     val s = input.toLowerCase
     val n = s.length
@@ -148,8 +151,9 @@ object PinyinUtils {
       i += 1
     }
 
-    if (!dp(n)) None
-    else {
+    if (!dp(n)) {
+      None
+    } else {
       val buf = ListBuffer.empty[String]
       var pos = n
       while (pos > 0) {
@@ -168,7 +172,7 @@ object PinyinUtils {
   def main(args: Array[String]): Unit = {
     val tests = Seq("nihao", "xian", "shanghai", "dangan", "women",
       "nvren", "lveduo", "zhuang", "beijing",
-      "rai", "hello", "kevin", "englishword", "")
+      "rai", "hello", "kevin", "englishword", "", "zhuaang")
     tests.foreach { t =>
       println(s"$t -> isPinyin=${isPinyin(t)}, split=${split(t).getOrElse(Seq("非拼音")).mkString(" ")}")
     }

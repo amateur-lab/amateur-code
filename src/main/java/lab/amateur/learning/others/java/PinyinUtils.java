@@ -158,11 +158,11 @@ public class PinyinUtils {
      * 但在纯粹“拼音判定与切分”的场景下，本方法已足够正确且高效。</p>
      *
      * @param input 待切分的拼音字符串（自动转为小写）
-     * @return 音节列表（如 ["ni", "hao"]）；若无法完全切分则返回 empty immutable list
+     * @return 音节列表（如 ["ni", "hao"]）；若无法完全切分则返回 null
      */
     public static List<String> split(String input) {
         if (input == null || input.isEmpty()) {
-            return Collections.emptyList();
+            return null;
         }
 
         String s = input.toLowerCase();
@@ -182,7 +182,7 @@ public class PinyinUtils {
         }
 
         if (!dp[n]) {
-            return Collections.emptyList();
+            return null;
         }
 
         // 回溯：从末尾开始，根据 fromLen 提取音节
@@ -205,7 +205,7 @@ public class PinyinUtils {
         };
         for (String t : tests) {
             System.out.println(t + " -> isPinyin=" + isPinyin(t) +
-                    ", split=" + (split(t).isEmpty() ? "非拼音" : String.join(" ", split(t))));
+                    ", split=" + (split(t) == null ? "非拼音" : String.join(" ", split(t))));
         }
     }
 }

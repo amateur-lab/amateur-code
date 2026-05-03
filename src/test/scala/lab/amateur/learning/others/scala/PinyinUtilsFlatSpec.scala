@@ -96,7 +96,7 @@ class PinyinUtilsFlatSpec extends AnyFlatSpec with Matchers {
   }
 
   // 一致性
-  "Consistency" should "hold: split returns Some(list) iff isPinyin returns true" in {
+  "Consistency" should "hold: split returns Some(list) if isPinyin returns true" in {
     val testStrings = Seq(
       "a", "ni", "nihao", "xian", "shanghai", "dangan", "women",
       "hello", "kevin", "rai", "abc", "", "123", "x y"

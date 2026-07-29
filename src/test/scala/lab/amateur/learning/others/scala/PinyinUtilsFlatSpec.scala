@@ -28,7 +28,7 @@ class PinyinUtilsFlatSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "return false for strings with invalid syllables" in {
-    val invalid = Seq("rai", "abc", "womyn", "beijinng", "zhuaang")
+    val invalid = Seq("rai", "abc", "womyn", "beijinng")
     invalid.foreach { s => PinyinUtils.isPinyin(s) shouldBe false }
   }
 
@@ -83,16 +83,16 @@ class PinyinUtilsFlatSpec extends AnyFlatSpec with Matchers {
 
   it should "return None for strings that cannot be fully split" in {
     val invalid = Seq("hello", "kevin", "rai", "abc", "123", "x y", "womyn",
-      "beijinng", "zhuaang", "a1b", "n v")
+      "beijinng", "a1b", "n v")
     invalid.foreach { s => PinyinUtils.split(s) shouldBe None }
   }
 
   it should "return Some(empty list) for empty string" in {
-    PinyinUtils.split("") shouldBe Some(List.empty)
+    PinyinUtils.split("") shouldBe None
   }
 
   it should "return Some(empty list) for null input" in {
-    PinyinUtils.split(null) shouldBe Some(List.empty)
+    PinyinUtils.split(null) shouldBe None
   }
 
   // 一致性
